@@ -9,11 +9,11 @@ output: html_document
 
 ## Objective ##
 
-The principal aim of the Coursera Data Science specialisation's Capstone Project is to develop a data product which impliments a predictive text model. The data provided to build this model upon include a number of text corpora, derived from a range of sources (Twitter, blogs and news feeds). The first step in the project involved downloading and reading in the datasets, followed by cleaning of the datasets using techniques frequently used in the text mining community, such as tokenisation and stop word removal. This was followed by exploratory analysis of the datasets to allow the development of a strategy to enact the predictive text model.
+The principal aim of the Coursera Data Science specialization's Capstone Project is to develop a data product (Shiny app) which implements a predictive text model. The data provided to build this model upon include a number of text corpora, derived from a range of sources (Twitter, blogs and news feeds). The first step in the project involved downloading and reading in the data sets, followed by cleaning of the data sets using techniques frequently used in the text mining community, such as tokenization and stop word removal. This was followed by exploratory analysis of the data sets to allow the development of a strategy to enact the predictive text model.
 
 ## Data Acquisition ##
 
-The datasets were provided by the Capstone Project organisers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The datasets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language datasets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line.], allowing the number of documents in each corpus to be assessed as shown below: 
+The data sets were provided by the Capstone Project organizers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The data sets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language data sets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line.], allowing the number of documents in each corpus to be assessed as shown below: 
 
 ```{r message=FALSE, cache=TRUE, warning=FALSE}
 ## Corpus document counts##
@@ -26,7 +26,7 @@ length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt", enc
 
 ```
 
-As the corpora were relatively large (with the Twitter corpus containing more than 2.3 million documents), it was decided to sub-sample each corpus in order to reduce the compuational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
+As the corpora were relatively large (with the Twitter corpus containing more than 2.3 million documents), it was decided to sub-sample each corpus in order to reduce the computational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
 
 ```{r message=FALSE, cache=TRUE, warning=FALSE}
 set.seed(9178)
@@ -58,7 +58,7 @@ close(con = con)
 
 ## Data Pre-processing ##
 
-The R packages [tm](https://cran.r-project.org/web/packages/tm/index.html) and [RWeka](https://cran.r-project.org/web/packages/RWeka/index.html) were utilised to pre-process the datasets. Firstly, the training datasets were processed into Corpus objects for further manipulation with the tm package. Again, the News corpus is used as an example:
+The R packages [tm](https://cran.r-project.org/web/packages/tm/index.html) and [RWeka](https://cran.r-project.org/web/packages/RWeka/index.html) were utilized to pre-process the data sets. Firstly, the training data sets were processed into Corpus objects for further manipulation with the tm package. Again, the News corpus is used as an example:
 
 ``` {r message=FALSE, cache=TRUE, warning=FALSE}
 library(RWeka)
@@ -74,7 +74,7 @@ CorpNews_training <- Corpus(VectorSource(training_news))
 
 ### Tokenisation ###
 
-Tokenisation involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenised corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenise the corpus. Also, the removal of punctutation aided in subsequent stopword removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stopword and stemming algorithms.   
+Tokenization involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenised corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenise the corpus. Also, the removal of punctuation aided in subsequent stop-word removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stop-word and stemming algorithms.   
 
 ``` {r message=FALSE, cache=TRUE, warning=FALSE}
 CorpNews_training <- tm_map(CorpNews_training, AlphabeticTokenizer)
@@ -83,13 +83,17 @@ CorpNews_training <- tm_map(CorpNews_training, PlainTextDocument, language = "en
 
 ### Stopword Removal and Stemming ###
 
-Stopwords are the most common words within a language, which due to their frequent occurence, have a low entropy (see [Feinerer et al.](https://www.jstatsoft.org/article/view/v025i05)) - and therefore little predictive power. These were stripped from the corpus using an English language-specific stopword list from the tm package.         
+Stop-words are the most common words within a language, which due to their frequent occurrence, have a low entropy (see [Feinerer et al.](https://www.jstatsoft.org/article/view/v025i05)) - and therefore little predictive power. These were stripped from the corpus using an English language-specific stop-word list from the tm package.         
 
-Stemming is the process of reducing inflected words to their roots. This reduces the complexity of the dataset (by collapsing multiple terms into a single "root" term) with relatively little loss of information. Stemming was acheived using the Snowball stemmer from the Weka package. 
+Stemming is the process of reducing inflected words to their roots. This reduces the complexity of the data set (by collapsing multiple terms into a single "root" term) with relatively little loss of information. Stemming was achieved using the Snowball stemmer from the Weka package. 
+
+## Exploratory Analysis ##
+
+Once the data sets were pre-processed, exploratory analysis of the data sets was conducted. The aim was to develop familiarity with the properties of the data, and to help develop a strategy for the development of the prediction algorithm which will form the basis of a Shiny app. 
 
 ### Count-based Evaluation ###
 
-Count-based evaluation methods were made to assess the frequncy distributions of terms in the datasets.Term Document Matrices (TDMs) were generated from the tm Corpus objects using the TermDocumentMatrix function. The function also served as a wrapper to enact stop word removal and stemming as described above.
+Count-based evaluation methods were made to assess the frequency distributions of terms in the data sets.Term Document Matrices (TDMs) were generated from the tm Corpus objects using the TermDocumentMatrix function. The function also served as a wrapper to enact stop word removal and stemming as described above.
 
 ```{r message=FALSE, cache=TRUE, warning=FALSE}
 TDMNews_training <- TermDocumentMatrix(CorpNews_training, control = list(stopwords = TRUE, stemming = TRUE))
@@ -98,11 +102,11 @@ show(TDMNews_training)
 
 As an example, in the News corpus TDM, there were `r TDMNews_training$nrow` terms contained within `r TDMNews_training$ncol` documents. The quantiles of the distribution of frequencies show that most terms occur only a few times in the corpus. 
 
-``` {r }
+``` {r eval = FALSE}
 quantile(rowSums(as.matrix(TDMNews_training)))
 ```
 
-``` {r }
+``` {r eval = FALSE }
 Mx_News_training <- rowSums(as.matrix(TDMNews_training))
 names(Mx_News_training) <- rownames(as.matrix(TDMNews_training))
 Mx_News_training <- sort(Mx_News_training, decreasing = TRUE)
@@ -119,3 +123,19 @@ sum(Mx_News_training[Mx_News_training>2])/sum(Mx_News_training)
 length(Mx_News_training[Mx_News_training>2])
 
 ```
+
+## Strategy for Developing Algorithm and Shiny App ##
+
+Exploratory analysis of the data sets focused on the frequency distribution of single word terms in the corpus. In order to form a predictive text model, the likelihood of a word occurring - given the occurrence of one or more words previously - must be assessed. Therefore instead of looking at the frequency distribution of isolated words, we will need to look at the frequency of occurrence of contiguous sequences of words [(*n*-grams)](https://en.wikipedia.org/wiki/N-gram), such as pairs (bigrams) or triplets (trigrams), within the corpora.
+
+A rough strategy for building an *n*-gram model is detailed below:
+
+1. The first step in developing an *n*-gram model will be to use an *n*-gram tokeniser, instead of an alphabetic or simple word tokenizer, in order to preserve the proximity information contained within the documents of the corpora (i.e. proximity of words to each other). The RWeka package's NGramTokenizer will be assessed for this role.
+2. *n*-gram tokenization may have flow on effects for stop-word removal and stemming - which is currently being enacted using the wrapper functions from the tm package. Effective stop-word removal and stemming must be ensured before proceeding.
+3. The performance of various *n* = 1,2 or 3 models will be assessed to determine how many parameters the model requires.
+4. The issue of unobserved *n*-grams will need to be evaluated, as a central feature of natural language is the occurrence of novel word combinations (*n*-grams which were unobserved in the corpora used to train the model). Smoothing to assign non-zero probabilities to unobserved *n*-grams will need to be investigated.
+5. RAM and run-time requirements of algorithms will need to be assessed - hopefully the exploratory analysis of word frequency distributions will guide formation of a minimal "dictionary" which covers a high proportion of word occurrences, and therefore minimizes the size of the predictive model.
+
+## Summary ##
+
+As the initial steps in the Coursera Data Science Capstone Project to deliver a predictive text model, the provided corpora of English language documents encompassing Twitter, blog and news feed sources were read in and the data cleaned. Due to the large size of the corpora, random sub-sampling of 10% of the documents, followed by segregation into training (80%) and test sets(20%), was conducted in order to reduce the computational overhead. The corpora were tokenised into single words (unigrams), English stop-words were removed and the words were stemmed to reduce them to their roots. Exploratory analysis was conducted by count-based evaluation of the frequency distributions of words within the corpora. This gave a guide to the formation of minimal dictionaries which comprise the bulk of word occurrences within the corpora. A strategy to extend analysis from unigrams to higher *n*-grams, in order to produce a predictive text model, was developed.
