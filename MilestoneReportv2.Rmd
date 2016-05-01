@@ -1,0 +1,121 @@
+---
+title: "Capstone Project Milestone Report"
+author: "John Beal"
+date: "1 May 2016"
+output: html_document
+---
+
+# Coursera Data Science Specialisation Capstone Project - Milestone Report
+
+## Objective ##
+
+The principal aim of the Coursera Data Science specialisation's Capstone Project is to develop a data product which impliments a predictive text model. The data provided to build this model upon include a number of text corpora, derived from a range of sources (Twitter, blogs and news feeds). The first step in the project involved downloading and reading in the datasets, followed by cleaning of the datasets using techniques frequently used in the text mining community, such as tokenisation and stop word removal. This was followed by exploratory analysis of the datasets to allow the development of a strategy to enact the predictive text model.
+
+## Data Acquisition ##
+
+The datasets were provided by the Capstone Project organisers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The datasets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language datasets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line.], allowing the number of documents in each corpus to be assessed as shown below: 
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+## Corpus document counts##
+## Twitter ##
+length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter.txt", encoding = "UTF-8"))
+## Blogs ##
+length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.blogs.txt", encoding = "UTF-8"))
+## News ##
+length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt", encoding = "UTF-8"))
+
+```
+
+As the corpora were relatively large (with the Twitter corpus containing more than 2.3 million documents), it was decided to sub-sample each corpus in order to reduce the compuational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+set.seed(9178)
+## Take 10% of each corpus as sample (without replacement) ##
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt", encoding = "UTF-8")
+sample <- sample(x  = readLines(con = con), size = 0.1*length(readLines(con = con)), replace = FALSE)
+close(con = con)
+length(sample)
+```
+
+Each sample was further split into a training set (80%) and test set (20%), and output into text files for storage.
+
+```{r message=FALSE, cache=TRUE, warning=FALSE, eval=FALSE}
+## Split further into training (80%) and test sets (20%) ##
+inTrain <- as.logical(rbinom(n = length(sample), size = 1, p = 0.8))
+training <- sample[inTrain]
+testing <- sample[!inTrain]
+
+## Output in files for later use ##
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-training.txt", encoding = "UTF-8")
+writeLines(text = training, con = con)
+close(con = con)
+
+
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-test.txt", encoding = "UTF-8")
+writeLines(text = testing, con = con)
+close(con = con)
+```
+
+## Data Pre-processing ##
+
+The R packages [tm](https://cran.r-project.org/web/packages/tm/index.html) and [RWeka](https://cran.r-project.org/web/packages/RWeka/index.html) were utilised to pre-process the datasets. Firstly, the training datasets were processed into Corpus objects for further manipulation with the tm package. Again, the News corpus is used as an example:
+
+``` {r message=FALSE, cache=TRUE, warning=FALSE}
+library(RWeka)
+library(tm)
+require(SnowballC)
+
+## Create tm package Corpus object from training set
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-training.txt", encoding = "UTF-8")
+training_news <- readLines(con = con )
+close(con)
+CorpNews_training <- Corpus(VectorSource(training_news))
+```
+
+### Tokenisation ###
+
+Tokenisation involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenised corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenise the corpus. Also, the removal of punctutation aided in subsequent stopword removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stopword and stemming algorithms.   
+
+``` {r message=FALSE, cache=TRUE, warning=FALSE}
+CorpNews_training <- tm_map(CorpNews_training, AlphabeticTokenizer)
+CorpNews_training <- tm_map(CorpNews_training, PlainTextDocument, language = "en")
+```
+
+### Stopword Removal and Stemming ###
+
+Stopwords are the most common words within a language, which due to their frequent occurence, have a low entropy (see [Feinerer et al.](https://www.jstatsoft.org/article/view/v025i05)) - and therefore little predictive power. These were stripped from the corpus using an English language-specific stopword list from the tm package.         
+
+Stemming is the process of reducing inflected words to their roots. This reduces the complexity of the dataset (by collapsing multiple terms into a single "root" term) with relatively little loss of information. Stemming was acheived using the Snowball stemmer from the Weka package. 
+
+### Count-based Evaluation ###
+
+Count-based evaluation methods were made to assess the frequncy distributions of terms in the datasets.Term Document Matrices (TDMs) were generated from the tm Corpus objects using the TermDocumentMatrix function. The function also served as a wrapper to enact stop word removal and stemming as described above.
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+TDMNews_training <- TermDocumentMatrix(CorpNews_training, control = list(stopwords = TRUE, stemming = TRUE))
+show(TDMNews_training)
+```
+
+As an example, in the News corpus TDM, there were `r TDMNews_training$nrow` terms contained within `r TDMNews_training$ncol` documents. The quantiles of the distribution of frequencies show that most terms occur only a few times in the corpus. 
+
+``` {r }
+quantile(rowSums(as.matrix(TDMNews_training)))
+```
+
+``` {r }
+Mx_News_training <- rowSums(as.matrix(TDMNews_training))
+names(Mx_News_training) <- rownames(as.matrix(TDMNews_training))
+Mx_News_training <- sort(Mx_News_training, decreasing = TRUE)
+quantile(Mx_News_training)
+
+findFreqTerms(TDMNews_training, lowfreq = 2, highfreq = Inf)
+
+## No. of words in frequency sorted dictionary to cover 50% of word instances ##
+sum(Mx_News_training[Mx_News_training>40])/sum(Mx_News_training)
+length(Mx_News_training[Mx_News_training>40])
+
+## No. of words in frequency sorted dictionary to cover 90% of word instances ##
+sum(Mx_News_training[Mx_News_training>2])/sum(Mx_News_training)
+length(Mx_News_training[Mx_News_training>2])
+
+```
