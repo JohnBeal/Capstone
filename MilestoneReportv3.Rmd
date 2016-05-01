@@ -13,20 +13,33 @@ The principal aim of the Coursera Data Science specialization's Capstone Project
 
 ## Data Acquisition ##
 
-The data sets were provided by the Capstone Project organizers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The data sets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language data sets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line.], allowing the number of documents in each corpus to be assessed as shown below: 
+The data sets were provided by the Capstone Project organizers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The data sets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language data sets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line, allowing the number of documents in each corpus to be assessed as shown below. Furthermore, the total number of words in each corpus was estimated.  
 
 ```{r message=FALSE, cache=TRUE, warning=FALSE}
-## Corpus document counts##
-## Twitter ##
-length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter.txt", encoding = "UTF-8"))
-## Blogs ##
-length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.blogs.txt", encoding = "UTF-8"))
-## News ##
-length(readLines(con = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt", encoding = "UTF-8"))
+## Corpus document/character counts##
+
+## Create list of file connections to corpora ##
+con <- list(".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.blogs.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt")
+
+## Read data in from corpora line-by-line ##
+mydata <- lapply(con, readLines, encoding = "UTF-8")
+names(mydata) <- c("Twitter", "Blogs", "News")
+
+## Determine number of documents in each corpus (equal to number of lines) ##
+sapply(mydata, length)
+
+
+## Estimate total number of words in each corpus ##
+## Split documents on space to produce vectors of words for each document ##
+mydata2 <- lapply(mydata, strsplit, split = " ")
+## Count number of words in each corpus ## 
+sapply(lapply(mydata2, unlist), length)
 
 ```
 
-As the corpora were relatively large (with the Twitter corpus containing more than 2.3 million documents), it was decided to sub-sample each corpus in order to reduce the computational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
+As the corpora were relatively large (with the Twitter corpus containing almost `r prettyNum(signif(sapply(mydata, length)[1], 2), scientific = FALSE, big.mark = ",")` documents and a total of more than `r prettyNum(signif(sapply(lapply(mydata2, unlist), length)[1], 2), scientific = FALSE, big.mark = ",")` words), it was decided to sub-sample each corpus in order to reduce the computational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
 
 ```{r message=FALSE, cache=TRUE, warning=FALSE}
 set.seed(9178)
@@ -102,8 +115,16 @@ show(TDMNews_training)
 
 As an example, in the News corpus TDM, there were `r TDMNews_training$nrow` terms contained within `r TDMNews_training$ncol` documents. The quantiles of the distribution of frequencies show that most terms occur only a few times in the corpus. 
 
-``` {r eval = TRUE}
+``` {r eval = FALSE}
+library(ggplot2)
+
+## Transform TDM into matrix of cumulative word frequencies by summing across rows ##
 Mx_News_training <- rowSums(as.matrix(TDMNews_training))
+## Sort by frequency 
+Mx_News_training <- sort(Mx_News_training, decreasing = TRUE)
+
+
+
 quantile(Mx_News_training)
 ```
 
