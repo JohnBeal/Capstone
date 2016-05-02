@@ -1,0 +1,202 @@
+---
+title: "Capstone Project Milestone Report"
+author: "John Beal"
+date: "1 May 2016"
+output: html_document
+---
+
+# Coursera Data Science Specialisation Capstone Project - Milestone Report
+
+## Objective ##
+
+The principal aim of the Coursera Data Science specialization's Capstone Project is to develop a data product (Shiny app) which implements a predictive text model. The data provided to build this model upon include a number of text corpora, derived from a range of sources (Twitter, blogs and news feeds). The first step in the project involved downloading and reading in the data sets, followed by cleaning of the data sets using techniques frequently used in the text mining community, such as tokenization and stop word removal. This was followed by exploratory analysis of the data sets to allow the development of a strategy to enact the predictive text model.
+
+## Data Acquisition ##
+
+The data sets were provided by the Capstone Project organizers, and sourced from the [HC Corpora](http://www.corpora.heliohost.org/) corpus.The data sets came in the form of a [zip file](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip), containing corpora for 4 languages (English, German, Russian and Finnish). This project was progressed initially using only the English language data sets. The corpora for each language took the form of text documents (UTF-8 encoding) for each source type (Twitter, blogs and news), containing one text "document" per line, allowing the number of documents in each corpus to be assessed as shown below. Furthermore, the total number of words in each corpus was estimated.  
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+## Corpus document/character counts##
+
+## Create list of file connections to corpora ##
+con <- list(".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.blogs.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt")
+
+## Read data in from corpora line-by-line ##
+mydata <- lapply(con, readLines, encoding = "UTF-8")
+names(mydata) <- c("Twitter", "Blogs", "News")
+
+## Determine number of documents in each corpus (equal to number of lines) ##
+sapply(mydata, length)
+
+
+## Estimate total number of words in each corpus ##
+## Split documents on space to produce vectors of words for each document ##
+mydata2 <- lapply(mydata, strsplit, split = " ")
+## Count number of words in each corpus ## 
+sapply(lapply(mydata2, unlist), length)
+
+```
+
+As the corpora were relatively large (with the Twitter corpus containing almost `r prettyNum(signif(sapply(mydata, length)[1], 2), scientific = FALSE, big.mark = ",")` documents and a total of more than `r prettyNum(signif(sapply(lapply(mydata2, unlist), length)[1], 2), scientific = FALSE, big.mark = ",")` words), it was decided to sub-sample each corpus in order to reduce the computational overhead. Each corpus was read line-by-line and a 10% sample of the documents was taken. An example is given for the English language News corpus: 
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+set.seed(9178)
+## Take 10% of each corpus as sample (without replacement) ##
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news.txt", encoding = "UTF-8")
+sample <- sample(x  = readLines(con = con), size = 0.1*length(readLines(con = con)), replace = FALSE)
+close(con = con)
+length(sample)
+```
+
+Each sample was further split into a training set (80%) and test set (20%), and output into text files for storage.
+
+```{r message=FALSE, cache=TRUE, warning=FALSE, eval=FALSE}
+## Split further into training (80%) and test sets (20%) ##
+inTrain <- as.logical(rbinom(n = length(sample), size = 1, p = 0.8))
+training <- sample[inTrain]
+testing <- sample[!inTrain]
+
+## Output in files for later use ##
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-training.txt", encoding = "UTF-8")
+writeLines(text = training, con = con)
+close(con = con)
+
+
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-test.txt", encoding = "UTF-8")
+writeLines(text = testing, con = con)
+close(con = con)
+```
+
+## Data Pre-processing ##
+
+The R packages [tm](https://cran.r-project.org/web/packages/tm/index.html) and [RWeka](https://cran.r-project.org/web/packages/RWeka/index.html) were utilized to pre-process the data sets. Firstly, the training data sets were processed into Corpus objects for further manipulation with the tm package. Again, the News corpus is used as an example:
+
+``` {r message=FALSE, cache=TRUE, warning=FALSE}
+library(RWeka)
+library(tm)
+require(SnowballC)
+
+## Create tm package Corpus object from training set
+con <- file(description = ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-training.txt", encoding = "UTF-8")
+training_news <- readLines(con = con )
+close(con)
+CorpNews_training <- Corpus(VectorSource(training_news))
+```
+
+### Tokenisation ###
+
+Tokenization involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenized corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenize the corpus. Also, the removal of punctuation aided in subsequent stop-word removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stop-word and stemming algorithms.   
+
+``` {r message=FALSE, cache=TRUE, warning=FALSE}
+CorpNews_training <- tm_map(CorpNews_training, AlphabeticTokenizer)
+CorpNews_training <- tm_map(CorpNews_training, PlainTextDocument, language = "en")
+```
+
+### Stopword Removal and Stemming ###
+
+Stop-words are the most common words within a language, which due to their frequent occurrence, have a low entropy (see [Feinerer et al.](https://www.jstatsoft.org/article/view/v025i05)) - and therefore little predictive power. These were stripped from the corpus using an English language-specific stop-word list from the tm package.         
+
+Stemming is the process of reducing inflected words to their roots. This reduces the complexity of the data set (by collapsing multiple terms into a single "root" term) with relatively little loss of information. Stemming was achieved using the Snowball stemmer from the Weka package. 
+
+## Exploratory Analysis ##
+
+Once the data sets were pre-processed, exploratory analysis of the data sets was conducted. The aim was to develop familiarity with the properties of the data, and to help develop a strategy for the development of the prediction algorithm which will form the basis of a Shiny app. 
+
+### Count-based Evaluation ###
+
+Count-based evaluation methods were made to assess the frequency distributions of terms in the data sets.Term Document Matrices (TDMs) were generated from the tm Corpus objects using the TermDocumentMatrix function. The function also served as a wrapper to enact stop word removal and stemming as described above.
+
+``` {r echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+# Establish connections to files containing en_US corpora trainint sets ##
+con <- list(".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter-training.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.blogs-training.txt", 
+            ".\\Coursera-SwiftKey\\final\\en_US\\en_US.news-training.txt")
+
+## Read in training sets ##
+mydata <- lapply(con, readLines, encoding = "UTF-8")
+names(mydata) <- c("Twitter", "Blogs", "News")
+
+## Assemble training sets into Corpora using tm package ##
+
+myCorpora <- lapply(lapply(mydata, VectorSource), Corpus)
+
+## Tokenize Corpus object by mapping AlphabeticTokenizer function from RWeka package ##
+## AlphabeticTokenizer removes punctuation symbols (punctuation, emoticons etc) and tokenizes with low overhead ##
+## Removal of punctuation allows for more successful subsequent stopword removal and stemming ## 
+## Mapping of PlainTextDocument function ensures correct format of Corpus for subsequent tm transformations ## 
+
+myCorpora <- lapply(myCorpora, tm_map, AlphabeticTokenizer)
+myCorpora <- lapply(myCorpora, tm_map, PlainTextDocument, language = "en")
+```
+
+The number of documents and terms in the resulting TDM for each corpus is shown below:
+
+```{r message=FALSE, cache=TRUE, warning=FALSE}
+## Calculate TDMs for tokenized corpora training sets contained in myCorpora list. Remove stopwords and stem. ##
+myTDM <- lapply(myCorpora, TermDocumentMatrix, control = list(stopwords = TRUE, stemming = TRUE))
+
+## Number of Documents in corpora training set TDMs ##
+sapply(myTDM, "[[", 5)
+
+## Number of Terms in corpora training set TDMs ##
+sapply(myTDM, "[[", 4)
+```
+
+Using the News corpus TDM as an example: there were `r myTDM[["News"]]$nrow` terms contained within `r myTDM[["News"]]$ncol` documents. As the histogram of term frequencies below demonstrates, the distribution is heavily skewed towards low frequencies - i.e. most terms occur only a few times and relatively few terms appear frequently in the corpus. 
+
+``` {r eval = TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(slam)
+
+df <- data.frame(frequency = sort(row_sums(as.matrix(myTDM[["News"]])), decreasing = TRUE))
+Newsplot <- ggplot(data = df, aes(x = df$frequency)) + geom_histogram(bins = 50 )
+Newsplot <- Newsplot + theme_light() + theme(plot.title = element_text(size = 25), axis.title = element_text(size = 20))
+Newsplot <- Newsplot + ylab("Count") + xlab("Term Frequency (in Corpus)") + ggtitle("News Corpus Term Frequency")
+Newsplot
+```
+
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
+closest <- function (x, y) {
+                which(abs(x-y)==min(abs(x-y)))
+
+}
+
+```
+
+The cumulative relative term frequency distribution for the the News corpus is shown below. The red line denotes 50% cumulative relative frequency. For the News corpus, the line intersects the distribution at a term frequency of `r df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ]` - i.e. if we take only terms with frequencies greater than or equal to `r df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ]` to add to our dictionary, these terms together represent 50% of word instances in the corpus.    
+
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+df <- data.frame(frequency = sort(row_sums(as.matrix(myTDM[["News"]])), decreasing = TRUE))
+Newsplot2 <- ggplot(data = df, aes(x = df$frequency)) + stat_ecdf() + theme_light()
+Newsplot2 <- Newsplot2 + theme(plot.title = element_text(size = 25), axis.title = element_text(size = 20))
+Newsplot2 <- Newsplot2 + ylab("Cumulative Relative Frequency") + xlab("Term Frequency (in Corpus)") + ggtitle("News Corpus \n Cumulative Relative Term Frequency")
+Newsplot2 <- Newsplot2 + geom_hline(yintercept = 0.5, color = "red", size = 1) 
+Newsplot2
+```
+
+For the News corpus this dictionary represents a subset of only `r length(df[df$frequency > df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ], ])` out of the total `r myTDM[["News"]]$nrow` terms. The 20 highest frequency terms are shown below as an example:
+
+``` {r echo=FALSE}
+head(df, n = 20)
+```
+
+
+## Strategy for Developing Algorithm and Shiny App ##
+
+Exploratory analysis of the data sets focused on the frequency distribution of single word terms in the corpus. In order to form a predictive text model, the likelihood of a word occurring - given the occurrence of one or more words previously - must be assessed. Therefore instead of looking at the frequency distribution of isolated words, we will need to look at the frequency of occurrence of contiguous sequences of words [(*n*-grams)](https://en.wikipedia.org/wiki/N-gram), such as pairs (bigrams) or triplets (trigrams), within the corpora.
+
+A rough strategy for building an *n*-gram model is detailed below:
+
+1. The first step in developing an *n*-gram model will be to use an *n*-gram tokenizer, instead of an alphabetic or simple word tokenizer, in order to preserve the proximity information contained within the documents of the corpora (i.e. proximity of words to each other). The RWeka package's NGramTokenizer will be assessed for this role.
+2. *n*-gram tokenization may have flow on effects for stop-word removal and stemming - which is currently being enacted using the wrapper functions from the tm package. Effective stop-word removal and stemming must be ensured before proceeding.
+3. The performance of various *n* = 1,2 or 3 models will be assessed to determine how many parameters the model requires.
+4. The issue of unobserved *n*-grams will need to be evaluated, as a central feature of natural language is the occurrence of novel word combinations (*n*-grams which were unobserved in the corpora used to train the model). Smoothing to assign non-zero probabilities to unobserved *n*-grams will need to be investigated.
+5. RAM and run-time requirements of algorithms will need to be assessed - hopefully the exploratory analysis of word frequency distributions will guide formation of a minimal "dictionary" which covers a high proportion of word occurrences, and therefore minimizes the size of the predictive model.
+
+## Summary ##
+
+As the initial steps in the Coursera Data Science Capstone Project to deliver a predictive text model, the provided corpora of English language documents encompassing Twitter, blog and news feed sources were read in and the data cleaned. Due to the large size of the corpora, random sub-sampling of 10% of the documents, followed by segregation into training (80%) and test sets(20%), was conducted in order to reduce the computational overhead. The corpora were tokenized into single words (unigrams), English stop-words were removed and the words were stemmed to reduce them to their roots. Exploratory analysis was conducted by count-based evaluation of the frequency distributions of words within the corpora. This gave a guide to the formation of minimal dictionaries which comprise the bulk of word occurrences within the corpora. A strategy to extend analysis from unigrams to higher *n*-grams, in order to produce a predictive text model, was developed.
