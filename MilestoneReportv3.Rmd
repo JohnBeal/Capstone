@@ -87,7 +87,7 @@ CorpNews_training <- Corpus(VectorSource(training_news))
 
 ### Tokenisation ###
 
-Tokenization involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenised corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenise the corpus. Also, the removal of punctuation aided in subsequent stop-word removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stop-word and stemming algorithms.   
+Tokenization involves breaking down a document into its components (i.e. words). This was enacted by mapping the AlphabeticTokenizer function to the Corpus objects, before reassembling the tokenized corpus into a suitable format by mapping the PlainTextDocument function. The AlphabeticTokenizer function proved to be a computationally-efficient method to tokenize the corpus. Also, the removal of punctuation aided in subsequent stop-word removal and stemming, by eliminating combinations of punctuation and alphanumeric characters which evaded the stop-word and stemming algorithms.   
 
 ``` {r message=FALSE, cache=TRUE, warning=FALSE}
 CorpNews_training <- tm_map(CorpNews_training, AlphabeticTokenizer)
@@ -113,38 +113,46 @@ TDMNews_training <- TermDocumentMatrix(CorpNews_training, control = list(stopwor
 show(TDMNews_training)
 ```
 
-As an example, in the News corpus TDM, there were `r TDMNews_training$nrow` terms contained within `r TDMNews_training$ncol` documents. The quantiles of the distribution of frequencies show that most terms occur only a few times in the corpus. 
+As an example, in the News corpus TDM, there were `r TDMNews_training$nrow` terms contained within `r TDMNews_training$ncol` documents. As the histogram of term frequencies below demonstrates, the distribution is heavily skewed towards low frequencies - i.e. most terms occur only a few times and relatively few terms appear frequently in the corpus. 
 
-``` {r eval = FALSE}
+``` {r eval = TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(slam)
+
+df <- data.frame(frequency = sort(row_sums(as.matrix(TDMNews_training)), decreasing = TRUE))
+Newsplot <- ggplot(data = df, aes(x = df$frequency)) + geom_histogram(bins = 50 )
+Newsplot <- Newsplot + theme_light() + theme(plot.title = element_text(size = 25), axis.title = element_text(size = 20))
+Newsplot <- Newsplot + ylab("Count") + xlab("Term Frequency (in Corpus)") + ggtitle("News Corpus Term Frequency")
+Newsplot
+```
+
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
+closest <- function (x, y) {
+                which(abs(x-y)==min(abs(x-y)))
+
+}
+
+```
+
+The cumulative relative term frequency distribution for the the News corpus is shown below. The red line denotes 50% cumulative relative frequency. For the News corpus, the line intersects the distribution at a term frequency of `r df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ]` - i.e. if we take only terms with frequencies greater than or equal to `r df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ]` to add to our dictionary, these terms together represent 50% of word instances in the corpus.    
+
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
 
-## Transform TDM into matrix of cumulative word frequencies by summing across rows ##
-Mx_News_training <- rowSums(as.matrix(TDMNews_training))
-## Sort by frequency 
-Mx_News_training <- sort(Mx_News_training, decreasing = TRUE)
-
-
-
-quantile(Mx_News_training)
+df <- data.frame(frequency = sort(row_sums(as.matrix(TDMNews_training)), decreasing = TRUE))
+Newsplot2 <- ggplot(data = df, aes(x = df$frequency)) + stat_ecdf() + theme_light()
+Newsplot2 <- Newsplot2 + theme(plot.title = element_text(size = 25), axis.title = element_text(size = 20))
+Newsplot2 <- Newsplot2 + ylab("Cumulative Relative Frequency") + xlab("Term Frequency (in Corpus)") + ggtitle("News Corpus \n Cumulative Relative Term Frequency")
+Newsplot2 <- Newsplot2 + geom_hline(yintercept = 0.5, color = "red", size = 1) #+ geom_hline(yintercept = 0.1, color = "blue", size = 1)#
+Newsplot2
 ```
 
-``` {r eval = FALSE }
-Mx_News_training <- rowSums(as.matrix(TDMNews_training))
-names(Mx_News_training) <- rownames(as.matrix(TDMNews_training))
-Mx_News_training <- sort(Mx_News_training, decreasing = TRUE)
-quantile(Mx_News_training)
+For the News corpus this dictionary represents a subset of only `r length(df[df$frequency > df[closest(cumsum(df$frequency/sum(df$frequency)), 0.5), ], ])` out of the total `r TDMNews_training$nrow` terms. The 20 highest frequency terms are shown below as an example:
 
-findFreqTerms(TDMNews_training, lowfreq = 2, highfreq = Inf)
-
-## No. of words in frequency sorted dictionary to cover 50% of word instances ##
-sum(Mx_News_training[Mx_News_training>40])/sum(Mx_News_training)
-length(Mx_News_training[Mx_News_training>40])
-
-## No. of words in frequency sorted dictionary to cover 90% of word instances ##
-sum(Mx_News_training[Mx_News_training>2])/sum(Mx_News_training)
-length(Mx_News_training[Mx_News_training>2])
-
+``` {r echo=FALSE}
+head(df, n = 20)
 ```
+
 
 ## Strategy for Developing Algorithm and Shiny App ##
 
@@ -152,7 +160,7 @@ Exploratory analysis of the data sets focused on the frequency distribution of s
 
 A rough strategy for building an *n*-gram model is detailed below:
 
-1. The first step in developing an *n*-gram model will be to use an *n*-gram tokeniser, instead of an alphabetic or simple word tokenizer, in order to preserve the proximity information contained within the documents of the corpora (i.e. proximity of words to each other). The RWeka package's NGramTokenizer will be assessed for this role.
+1. The first step in developing an *n*-gram model will be to use an *n*-gram tokenizer, instead of an alphabetic or simple word tokenizer, in order to preserve the proximity information contained within the documents of the corpora (i.e. proximity of words to each other). The RWeka package's NGramTokenizer will be assessed for this role.
 2. *n*-gram tokenization may have flow on effects for stop-word removal and stemming - which is currently being enacted using the wrapper functions from the tm package. Effective stop-word removal and stemming must be ensured before proceeding.
 3. The performance of various *n* = 1,2 or 3 models will be assessed to determine how many parameters the model requires.
 4. The issue of unobserved *n*-grams will need to be evaluated, as a central feature of natural language is the occurrence of novel word combinations (*n*-grams which were unobserved in the corpora used to train the model). Smoothing to assign non-zero probabilities to unobserved *n*-grams will need to be investigated.
@@ -160,4 +168,4 @@ A rough strategy for building an *n*-gram model is detailed below:
 
 ## Summary ##
 
-As the initial steps in the Coursera Data Science Capstone Project to deliver a predictive text model, the provided corpora of English language documents encompassing Twitter, blog and news feed sources were read in and the data cleaned. Due to the large size of the corpora, random sub-sampling of 10% of the documents, followed by segregation into training (80%) and test sets(20%), was conducted in order to reduce the computational overhead. The corpora were tokenised into single words (unigrams), English stop-words were removed and the words were stemmed to reduce them to their roots. Exploratory analysis was conducted by count-based evaluation of the frequency distributions of words within the corpora. This gave a guide to the formation of minimal dictionaries which comprise the bulk of word occurrences within the corpora. A strategy to extend analysis from unigrams to higher *n*-grams, in order to produce a predictive text model, was developed.
+As the initial steps in the Coursera Data Science Capstone Project to deliver a predictive text model, the provided corpora of English language documents encompassing Twitter, blog and news feed sources were read in and the data cleaned. Due to the large size of the corpora, random sub-sampling of 10% of the documents, followed by segregation into training (80%) and test sets(20%), was conducted in order to reduce the computational overhead. The corpora were tokenized into single words (unigrams), English stop-words were removed and the words were stemmed to reduce them to their roots. Exploratory analysis was conducted by count-based evaluation of the frequency distributions of words within the corpora. This gave a guide to the formation of minimal dictionaries which comprise the bulk of word occurrences within the corpora. A strategy to extend analysis from unigrams to higher *n*-grams, in order to produce a predictive text model, was developed.
