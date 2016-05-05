@@ -18,12 +18,15 @@ closest <- function (x, y) {
 }
 
 ## Cumulative relative frequency ##
-## Calculated by dividing cumulative summed frquency by total frequency
+## Calculated by dividing cumulative summed frequency by total frequency
 
 myTDM_relcum <- lapply(myTDM_cum, function (x) {cumsum(x)/sum(x)} )
 
 
-## Find index of element which corresponds to resired cumulative relative frequency ## 
+## Find index of element in cumulative relative frequncy TDM which corresponds to desired boundary condition ## 
+## and extract corresponding cumulative frequency from cumulative TDM##
 
-##50%##
-lapply(myTDM_relcum, closest, 0.5)
+
+mapply(FUN = "[", data = myTDM_cum, sapply(myTDM_relcum, closest, 0.5), "cum.frequency")
+mapply(FUN = "[", data = myTDM_cum, sapply(myTDM_relcum, closest, 0.1), "cum.frequency")
+
