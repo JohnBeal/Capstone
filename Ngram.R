@@ -17,9 +17,14 @@ names(mydata) <- c("Twitter", "Blogs", "News")
 ## Assemble training sets into Corpora using tm package ##
 
 myCorpora <- lapply(lapply(mydata, VectorSource), Corpus)
+myCorpora <- lapply(myCorpora, tm_map, removePunctuation)
+myCorpora <- lapply(myCorpora, tm_map, removeNumbers)
 
 myTDM_bigram <- lapply(myCorpora, TermDocumentMatrix, control = 
                                list(tokenize = function(x) {NGramTokenizer(x, Weka_control(min = 2, max = 2))}))
+
+myTDM_unigram <- lapply(myCorpora, TermDocumentMatrix, control = 
+                                list(tokenize = function(x) {NGramTokenizer(x, Weka_control(min = 1, max = 1))}))
 
 myTDM_bigramcum <- lapply(myTDM_bigram, row_sums)
 myTDM_bigramcum <- lapply(myTDM_bigramcum, sort, decreasing = TRUE) 
