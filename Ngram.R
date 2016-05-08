@@ -35,6 +35,8 @@ myTDM_bigramcum <- lapply(myTDM_bigramcum, sort, decreasing = TRUE)
 myTDM_unigramcum <- lapply(myTDM_unigram, row_sums)
 myTDM_unigramcum <- lapply(myTDM_unigramcum, sort, decreasing = TRUE) 
 
+myTDM_trigramcum <- lapply(myTDM_trigram, row_sums)
+myTDM_trigramcum <- lapply(myTDM_trigramcum, sort, decreasing = TRUE) 
 
 ## Tokenize Corpus object by mapping NgramTokenizer function from RWeka package ##
 ## Mapping of PlainTextDocument function ensures correct format of Corpus for subsequent tm transformations ##
