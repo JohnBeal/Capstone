@@ -26,7 +26,14 @@ myTDM_relcum <- lapply(myTDM_cum, function (x) {cumsum(x)/sum(x)} )
 ## Find index of element in cumulative relative frequncy TDM which corresponds to desired boundary condition ## 
 ## and extract corresponding cumulative frequency from cumulative TDM##
 
+dictionary_50 <- mapply(FUN = findFreqTerms, myTDM, 
+       lowfreq = (mapply(FUN = "[", data = myTDM_cum, sapply(myTDM_relcum, closest, 0.5), "cum.frequency")))
 
 mapply(FUN = "[", data = myTDM_cum, sapply(myTDM_relcum, closest, 0.5), "cum.frequency")
+
+
+
 mapply(FUN = "[", data = myTDM_cum, sapply(myTDM_relcum, closest, 0.1), "cum.frequency")
+
+
 

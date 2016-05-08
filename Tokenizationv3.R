@@ -13,6 +13,7 @@ con <- list(".\\Coursera-SwiftKey\\final\\en_US\\en_US.twitter-training.txt",
 ## Read in training sets ##
 mydata <- lapply(con, readLines, encoding = "UTF-8")
 names(mydata) <- c("Twitter", "Blogs", "News")
+close(con)
 
 ## Assemble training sets into Corpora using tm package ##
 
