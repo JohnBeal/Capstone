@@ -26,8 +26,14 @@ myTDM_bigram <- lapply(myCorpora, TermDocumentMatrix, control =
 myTDM_unigram <- lapply(myCorpora, TermDocumentMatrix, control = 
                                 list(tokenize = function(x) {NGramTokenizer(x, Weka_control(min = 1, max = 1))}))
 
+myTDM_trigram <- lapply(myCorpora, TermDocumentMatrix, control = 
+                                list(tokenize = function(x) {NGramTokenizer(x, Weka_control(min = 3, max = 3))}))
+
 myTDM_bigramcum <- lapply(myTDM_bigram, row_sums)
 myTDM_bigramcum <- lapply(myTDM_bigramcum, sort, decreasing = TRUE) 
+
+myTDM_unigramcum <- lapply(myTDM_unigram, row_sums)
+myTDM_unigramcum <- lapply(myTDM_unigramcum, sort, decreasing = TRUE) 
 
 
 ## Tokenize Corpus object by mapping NgramTokenizer function from RWeka package ##
