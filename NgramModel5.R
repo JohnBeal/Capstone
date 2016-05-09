@@ -72,19 +72,19 @@ myTDM_4gram_comb <- sort(myTDM_4gram_comb, decreasing = TRUE)
 ### qML(wi | wi–2, wi–1)= trigram count/preceding bigram = count(wi–2, wi–1, wi)/count(wi–2, wi–1)
 ## Function to take first two words of trigram (wi-2, wi-1, wi) to generate corresponding bigram (wi-2, wi-1)##
 
-4_trigram <- function (x) {paste(unlist(strsplit(x, split = " "))[1], unlist(strsplit(x, split = " "))[2], sep =" "), 
-                                unlist(strsplit(x, split = " "))[3]}
-4_unigram <- function (x) {unlist(strsplit(x, split = " "))[4]}
+quad_trigram <- function (x) {paste(unlist(strsplit(x, split = " "))[1], unlist(strsplit(x, split = " "))[2], 
+                                unlist(strsplit(x, split = " "))[3],  sep =" ")}
+quad_unigram <- function (x) {unlist(strsplit(x, split = " "))[4]}
 
 ## Take combined 4-gram TDM  ##
 ## Assemble data frame with trigrams and trigram counts from the TDM ##
 ## Calculate the trigram (wi-3, wi-2, wi-1) corresponding to each 4-gram (wi-3, wi–2, wi–1, wi) ##
 ## Model designated uvw4 ##
 
-uvw4 <- data.frame(4gram = names(myTDM_4gram_comb), 
-                  4gramcount = myTDM_4gram_comb,
-                  trigram = sapply(names(myTDM_4gram_comb), FUN = 4_trigram),
-                  unigram = sapply(names(myTDM_4gram_comb), FUN = 4_unigram),
+uvw4 <- data.frame(quadgram = names(myTDM_4gram_comb), 
+                  quadgramcount = myTDM_4gram_comb,
+                  trigram = sapply(names(myTDM_4gram_comb), FUN = quad_trigram),
+                  unigram = sapply(names(myTDM_4gram_comb), FUN = quad_unigram),
                   stringsAsFactors = FALSE)
 
 ## Assemble data frame with bigrams and bigram counts from the TDM ##
@@ -100,5 +100,5 @@ uvw4 <- join(uvw4, uv4, by = "trigram", type = "inner")
 
 ## MLE generated from count(wi-3, wi–2, wi–1, wi)/count(wi-3, wi–2, wi–1) ##
 
-uvw4 <- mutate(uvw43, MLE = (uvw4["trigramcount"]/uvw4["bigramcount"]))
+uvw4 <- mutate(uvw4, MLE = (uvw4["quadgramcount"]/uvw4["trigramcount"]))
 names(uvw4[ , 6]) <- "MLE"
