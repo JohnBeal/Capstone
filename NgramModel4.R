@@ -92,6 +92,7 @@ uv3 <- data.frame(bigram = names(myTDM_bigram_comb), bigramcount = myTDM_bigram_
 ## Perform inner join on Uvw & uv data frames by the bigram variable to give single data frame with trigrams, trigram counts, ##
 ## corresponding bigram (w-2, w-1) and bigram counts ##
 
+detach("package:dplyr", unload=TRUE)
 library(plyr)
 
 uvw3 <- join(uvw3, uv3, by = "bigram", type = "inner")
