@@ -5,7 +5,7 @@ library(dplyr)
 
 ## Clean up input for prediction model ##
 
-input.clean <- function (x) {
+input.clean <- function (x, m = 2) {
         require(tm)
         x <- tolower(x)
         x <- removePunctuation(x)
@@ -14,7 +14,7 @@ input.clean <- function (x) {
         x <- stripWhitespace(x)
         x <- unlist(strsplit(x, split = " "))
         n <- length(x)
-        x <- paste(x[(n-1):n],  collapse = " ")
+        x <- paste(x[(n-(m-1)):n],  collapse = " ")
         x
 }
 
@@ -22,7 +22,8 @@ input.clean <- function (x) {
 ## 3-gram model ##
 
 predict.ngram <- function (x = character, model, n = 1) {
-                         candidates <- filter(model, bigram == x)
+                         require(dplyr)
+                         candidates <- filter(model, model[ , 3] == x)
                          candidates <- arrange(candidates, desc(MLE))
                          candidates <- slice(candidates, 1:n)
                          select(candidates, unigram)
