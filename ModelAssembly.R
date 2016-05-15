@@ -3,23 +3,22 @@
 ## Function to take first two words of trigram (wi-2, wi-1, wi) to generate corresponding bigram (wi-2, wi-1)##
 
 n_n_1.gram <- function (x) {words <- unlist(strsplit(x, split = " "))
-n <- length(words)
-paste(words[1:(n-1)], collapse = " ")}
+                            n <- length(words)
+                            paste(words[1:(n-1)], collapse = " ")}
 
 n_unigram <- function (x) {words <- unlist(strsplit(x, split = " "))
-n <- length(words)
-words[n]}
+                           n <- length(words)
+                           words[n]}
 
-## Take combined 4-gram TDM  ##
-## Assemble data frame with trigrams and trigram counts from the TDM ##
-## Calculate the trigram (wi-3, wi-2, wi-1) corresponding to each 4-gram (wi-3, wi–2, wi–1, wi) ##
-## Model designated uvw4 ##
+## Trigram  ##
 
-uvw4 <- data.frame(quadgram = names(myTDM_4gram_comb), 
-                   quadgramcount = myTDM_4gram_comb,
-                   trigram = sapply(names(myTDM_4gram_comb), FUN = quad_trigram),
-                   unigram = sapply(names(myTDM_4gram_comb), FUN = quad_unigram),
-                   stringsAsFactors = FALSE)
+uvw_trigram_pruned <- data.frame(n.gram = TFV_trigram_pruned["trigram"], 
+                                 n.gram_count = TFV_trigram_pruned["frequency"],
+                                 stringsAsFactors = FALSE)
+colnames(uvw_trigram_pruned) <- c("n.gram", "n.gram_count")
+
+
+uvw_trigram_pruned <- mutate(uvw_trigram_pruned, n_1.gram = n_n_1.gram(n.gram))
 
 ## Assemble data frame with bigrams and bigram counts from the TDM ##
 uv4 <- data.frame(trigram = names(myTDM_trigram_comb), trigramcount = myTDM_trigram_comb, stringsAsFactors = FALSE)

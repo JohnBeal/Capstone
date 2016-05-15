@@ -26,7 +26,7 @@ names(mydata) <- c("Twitter", "Blogs", "News")
 ## Merge corpora into single corpus for further processing ##
 
 myCorpora <- lapply(lapply(mydata, VectorSource), Corpus)
-myCorporus <- c(myCorpora[["Twitter"]], myCorpora[["Blogs"]], myCorpora[["News"]])
+myCorpus <- c(myCorpora[["Twitter"]], myCorpora[["Blogs"]], myCorpora[["News"]])
 
 ## 2. Data Cleaning & Tokenization ##
 ## For the sake of efficiency, fucntions: tolower, removePunctuation & removeNumbers are mapped to the documents in the corpora
@@ -64,7 +64,7 @@ myTDM_unigram <- TermDocumentMatrix(myCorpus, control =
                                                  stemming = FALSE, bounds = list(global = (c(10, Inf))),  wordLengths = c(3, Inf)))
 
 myTFV_unigram <- row_sums(myTDM_unigram)
-myTFV_unigram <- sort(myTFV_unigram2,decreasing = TRUE)
+myTFV_unigram <- sort(myTFV_unigram,decreasing = TRUE)
 
 ## 4. Output for storage ##
 
