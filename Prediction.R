@@ -5,7 +5,6 @@
 ## estimate (i.e. maximum liklihood estimate (MLE) or some smoothed probability estimate).
 
 
-
 make.names(c("n.gram", "n_1.gram", "unigram", "n.gram_count", "n_1.gram_count", "prob.estimate"))
 
 ## Prediction alogrithm from n-gram model ##
