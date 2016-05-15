@@ -1,0 +1,53 @@
+---
+title: "Capstone Project - Language Models"
+author: "John Beal"
+date: "15 May 2016"
+output: html_document
+---
+
+```{r}
+## Trigrams ##
+
+TFV_trigram <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_trigram_sw(-)_(bound(1)).csv", 
+                        header = TRUE, stringsAsFactors = FALSE)
+names(TFV_trigram) <- c("trigram", "frequency")
+
+TFV_trigram_pruned <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_trigram_sw(-)_(bound(10)).csv", 
+                               header = TRUE, stringsAsFactors = FALSE)
+names(TFV_trigram_pruned) <- c("trigram", "frequency")
+
+nrow(TFV_trigram)
+nrow(TFV_trigram_pruned)
+
+```
+
+```{r}
+## Bigrams ##
+
+TFV_bigram <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_bigram_sw(-)_(bound(1)).csv", 
+                       header = TRUE, stringsAsFactors = FALSE)
+names(TFV_bigram) <- c("bigram", "frequency")
+
+TFV_bigram_pruned <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_bigram_sw(-)_(bound(10)).csv", 
+                              header = TRUE, stringsAsFactors = FALSE)
+names(TFV_bigram_pruned) <- c("bigram", "frequency")
+
+nrow(TFV_bigram)
+nrow(TFV_bigram_pruned)
+
+```
+
+```{r}
+## Unigrams ##
+
+TFV_unigram <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_unigram_sw(-)_(bound(1)).csv", 
+                        header = TRUE, stringsAsFactors = FALSE)
+names(TFV_unigram) <- c("unigram", "frequency")
+
+TFV_unigram_pruned <- read.csv(".\\Coursera-SwiftKey\\final\\en_US\\TFV_unigram_sw(-)_(bound(10)).csv", 
+names(TFV_unigram_pruned) <- c("unigram", "frequency")
+
+nrow(TFV_unigram)
+nrow(TFV_unigram_pruned)
+
+```
