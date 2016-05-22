@@ -23,27 +23,48 @@ names(TFV_bigram) <- c("bigram", "frequency")
 TFV_unigram <- read.csv(file = ".\\Coursera-SwiftKey\\final\\en_US\\TFV_unigram_sw(-)_(bound(10)).csv", stringsAsFactors = F)
 names(TFV_unigram) <- c("unigram", "frequency")
 
-## Trigram  ##
+## Trigram - initial   ##
 
 uvw_trigram_pruned <- data.frame(n.gram = TFV_trigram[, "trigram"], 
                                  n.gram_count = TFV_trigram[, "frequency"],
                                  n_1.gram = sapply(TFV_trigram[, "trigram"], n_n_1.gram), 
-                                 unigram = sapply(TFV_trigram[, "trigram"], n_unigram),
+                                 ##unigram = sapply(TFV_trigram[, "trigram"], n_unigram),##
                                  stringsAsFactors = FALSE, row.names = NULL)
 
 
-## Assemble data frame with bigrams and bigram counts from the TDM ##
-uv4 <- data.frame(trigram = names(myTDM_trigram_comb), trigramcount = myTDM_trigram_comb, stringsAsFactors = FALSE)
+## Bigram - initial XX
 
-## Perform inner join on Uvw & uv data frames by the bigram variable to give single data frame with 4grams, 4ram counts, ##
-## corresponding trigram (wi-3, w-2, w-1) and trigram counts ##
+uvw_bigram_pruned <- data.frame(n.gram = TFV_bigram[, "bigram"],
+                                n.gram_count = TFV_bigram[, "frequency"],
+                                n_1.gram = sapply(TFV_bigram[, "bigram"], n_n_1.gram),
+                                ##unigram = sapply(TFV_bigram[, "bigram"], n_)unigram,##
+                                stringsAsFactors = FALSE, row.names = NULL) 
 
-detach("package:dplyr", unload=TRUE)
-library(plyr)
 
-uvw4 <- join(uvw4, uv4, by = "trigram", type = "inner")
+## Unigram - initial ##
 
-## MLE generated from count(wi-3, wi–2, wi–1, wi)/count(wi-3, wi–2, wi–1) ##
+uvw_unigram_pruned <- data.frame(n.gram = TFV_unigram[, "unigram"],
+                                 n.gram_count = TFV_unigram[, "frequency"],
+                                 stringsAsFactors = FALSE, row.names = NULL)
 
-uvw4 <- mutate(uvw4, MLE = (uvw4["quadgramcount"]/uvw4["trigramcount"]))
-names(uvw4[ , 6]) <- "MLE"
+
+## Bigram - final ##
+
+names(TFV_unigram) <- c("n_1.gram", "n_1.gram_count")
+uvw_bigram_pruned <- join(uvw_bigram_pruned, TFV_unigram, by = "n_1.gram", type = "inner")
+uvw_bigram_pruned <- mutate(uvw_bigram_pruned, unigram = sapply(uvw_bigram_pruned[, "n.gram"], n_unigram))
+
+
+## Trigram - final ##
+
+names(TFV_bigram) <- c("n_1.gram", "n_1.gram_count")
+uvw_trigram_pruned <- join(uvw_trigram_pruned, TFV_bigram, by = "n_1.gram", type = "inner")
+uvw_trigram_pruned <- mutate(uvw_trigram_pruned, unigram = sapply(uvw_trigram_pruned[, "n.gram"], n_unigram))
+
+## Probablity Estimate  - MLE ##
+
+uvw_trigram_pruned_MLE <- mutate(uvw_trigram_pruned, prob.estimate = (n.gram_count/n_1.gram_count))
+
+uvw_bigram_pruned_MLE <- mutate(uvw_bigram_pruned, prob.estimate = (n.gram_count/n_1.gram_count))
+
+uvw_unigram_pruned_MLE <- mutate(uvw_unigram_pruned, prob.estimate = (n.gram_count/(sum(n.gram_count))))
