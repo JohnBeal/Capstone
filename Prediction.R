@@ -15,26 +15,61 @@ library(dplyr)
 ## Clean up input for prediction model ##
 
 
-input.clean <- function (x = character(0), m = 2) {
+input.clean <- function (x = character(0), n = 2, stopword = FALSE) {
         require(tm)
+        
+        ## Replicate text clean up process used in n-gram preparation ##
+        ## change to lower CASE, remove punctuation, remove numbers and strip extra white space
         x <- tolower(x)
         x <- removePunctuation(x)
         x <- removeNumbers(x)
-        #x <- removeWords(x, stopwords("english"))#
+        
+        ## Conditional stopword removal ##
+        if (stopword == TRUE){
+                x <- removeWords(x, stopwords("english"))}
+        
         x <- stripWhitespace(x)
+        
+        ## Take the last m words as output ##
         x <- unlist(strsplit(x, split = " "))
-        n <- length(x)
-        x <- paste(x[(n-(m-1)):n],  collapse = " ")
+        m <- length(x)
+        x <- paste(x[(m-(n-1)):m],  collapse = " ")
         x
 }
 
+## n-gram predictorl ##
 
-## 3-gram model ##
-
-predict.ngram <- function (x = character, model, n = 1) {
+predict.ngram <- function (x = character, model, s = 1) {
                          require(dplyr)
-                         candidates <- filter(model, model[ , 3] == x)
-                         candidates <- arrange(candidates, desc(MLE))
-                         candidates <- slice(candidates, 1:n)
-                         select(candidates, unigram)
+                         candidates <- filter(model, model[ , "n_1.gram"] == x)
+                         candidates <- arrange(candidates, desc(prob.estimate))
+                         candidates <- slice(candidates, 1:s)
+                         if (nrow(candidates) > 0) {
+                                output <- select(candidates, unigram)
+                         }
+                         else output <- NULL
+                         output
+                                 
+}
+
+## Back-off model ##
+
+predict.ngramBOff <- function (x = character, s = 1) {
+                        output <- NULL
+                        ## Apply trigram language model ##
+                        if (is.null(output) == TRUE) {
+                                output <- predict.ngram(input.clean(x = x, n = 2), model = uvw_trigram_pruned_MLE, s = s)
+                                          
+                                         }
+                        ## Conditionally apply bigram language model ##
+                        if (is.null(output) == TRUE)  {
+                        output <- predict.ngram(input.clean(x = x, n = 1), model = uvw_bigram_pruned_MLE, s = s)
+                                           }
+                        ## Conditionally apply unigram language model ##
+                        if (is.null(output) == TRUE) {
+                                candidates <- uvw_unigram_pruned_MLE
+                                candidates <- slice(candidates, 1:s)
+                                output <- select(candidates, unigram)
+                                                }
+                        output
 }

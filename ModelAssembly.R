@@ -68,3 +68,4 @@ uvw_trigram_pruned_MLE <- mutate(uvw_trigram_pruned, prob.estimate = (n.gram_cou
 uvw_bigram_pruned_MLE <- mutate(uvw_bigram_pruned, prob.estimate = (n.gram_count/n_1.gram_count))
 
 uvw_unigram_pruned_MLE <- mutate(uvw_unigram_pruned, prob.estimate = (n.gram_count/(sum(n.gram_count))))
+ 
